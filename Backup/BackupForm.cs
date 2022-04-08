@@ -1,5 +1,6 @@
 ﻿using DevExpress.XtraGrid.Views.Grid;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Windows.Forms;
@@ -13,6 +14,8 @@ namespace Backup
         private const string NO_DEVICE = "Không có device";
         private int backupPosition = 0;
         private DateTime selectedBackupTime;
+        private int backup_set_id = 0;
+        private List<int> list_backup_ids = new List<int>();
 
         public BackupForm()
         {
@@ -46,11 +49,12 @@ namespace Backup
 
         private DataTable GetDatabaseBackupInfo()
         {
-            //string query = "exec GetAllBackupInfo @DBNAME=N'" + Program.Db + "'";
-            string query = "SELECT position, name ,backup_start_date , user_name " +
-                            "FROM msdb.dbo.backupset WHERE database_name = '@DBNAME' AND type = 'D' AND backup_set_id >= (SELECT MAX(backup_set_id) " +
-                            "FROM msdb.dbo.backupset WHERE media_set_id = (SELECT MAX(media_set_id) FROM msdb.dbo.backupset WHERE database_name = '@DBNAME' AND type = 'D')  AND position = 1 ) " +
-                            "ORDER BY backup_start_date DESC";
+            string query = "use master " +
+                "exec GetAllBackupInfo '@DBNAME'";
+            //string query = "SELECT position, name, backup_start_date, user_name, backup_set_id " +
+            //                "FROM msdb.dbo.backupset WHERE database_name = '@DBNAME' AND type = 'D' AND backup_set_id > (SELECT MAX(backup_set_id) - MAX(position) + 1 " +
+            //                "FROM msdb.dbo.backupset WHERE media_set_id = (SELECT MAX(media_set_id) FROM msdb.dbo.backupset WHERE database_name = '@DBNAME' AND type = 'D')) " +
+            //                "ORDER BY backup_start_date DESC";
             query = query.Replace("@DBNAME", Program.Db);
             Cursor.Current = Cursors.WaitCursor;
 
@@ -122,15 +126,23 @@ namespace Backup
                 if (dt != null && dt.Rows.Count > 0)
                 {
                     tbBackupCount.Text = dt.Rows.Count.ToString();
+                    backup_set_id = dt.Rows[0].Field<int>("backup_set_id");
+                    foreach(DataRow item in dt.Rows)
+                    {
+                        list_backup_ids.Add(item.Field<int>("backup_set_id"));
+                    }
+                    btnDelete.Enabled = true;
                 }
                 else
                 {
                     tbBackupCount.Text = "0";
+                    btnDelete.Enabled = false;
                 }
                 LoadToolWhenHadDevice();
             }
             else
             {
+                btnDelete.Enabled = false;
                 tbDeviceName.Text = NO_DEVICE;
                 LoadToolWhenNotHadDevice();
             }
@@ -211,10 +223,32 @@ namespace Backup
 
         private void Restore()
         {
+            bool isDevicePathExists = true;
             if (tbBackupCount.Text == "0")
             {
                 MessageBox.Show("Chưa có bản sao lưu nào", "!", MessageBoxButtons.OK);
                 return;
+            }
+
+            if (!IsDevicePathExists(devicePhysicalName))
+            {
+                MessageBox.Show("Đường dẫn device không hợp lệ.\nVui lòng chọn đường dẫn Device.", "Warning!", MessageBoxButtons.OK);
+                OpenFileDialog folderBrowser = new OpenFileDialog();
+                folderBrowser.ValidateNames = true;
+                folderBrowser.CheckFileExists = true;
+                folderBrowser.CheckPathExists = true;
+                folderBrowser.FileName = "Folder Selection.";
+                folderBrowser.Filter = "txt files (*.bak)|*.bak|All files (*.bak)|*.bak";
+                if (folderBrowser.ShowDialog() == DialogResult.OK)
+                {
+                    string folderPath = Path.GetFullPath(folderBrowser.FileName);
+                    devicePhysicalName = folderPath;
+                    isDevicePathExists = false;
+                }
+                else
+                {
+                    return;
+                }
             }
             if (Program.conn != null && Program.conn.State == ConnectionState.Open)
                 Program.conn.Close(); // đóng kết nối 
@@ -223,7 +257,14 @@ namespace Backup
             string query = "ALTER DATABASE " + Program.Db + " SET SINGLE_USER WITH ROLLBACK IMMEDIATE " + "USE tempdb ";
             if (cbTimeParam.Checked == false)
             {
-                query += "RESTORE DATABASE " + Program.Db + " FROM " + deviceName + " WITH FILE= " + backupPosition + ",REPLACE " + "ALTER DATABASE " + Program.Db + " SET MULTI_USER";
+                if (isDevicePathExists)
+                {
+                    query += "RESTORE DATABASE " + Program.Db + " FROM" + deviceName + " WITH FILE= " + backupPosition + ",REPLACE " + "ALTER DATABASE " + Program.Db + " SET MULTI_USER";
+                }
+                else
+                {
+                    query += "RESTORE DATABASE " + Program.Db + " FROM DISK='" + devicePhysicalName + "'" + " WITH FILE= " + backupPosition + ",REPLACE " + "ALTER DATABASE " + Program.Db + " SET MULTI_USER";
+                }
                 Cursor.Current = Cursors.WaitCursor;
                 if (Program.ExecSqlNonQuery(query) == 0)
                 {
@@ -253,80 +294,59 @@ namespace Backup
                 }
                 else
                 {
-                    //if (Directory.Exists(devicePhysicalName) == true)
-                    //{
-                        string strFullPathBackLog = devicePhysicalName.Replace(".BAK", ".TRN");
-                        query += "BACKUP LOG " + Program.Db + " TO DISK='" + strFullPathBackLog + "' WITH INIT\n "
-                            + "RESTORE DATABASE " + Program.Db + " FROM DISK='" + devicePhysicalName + "' WITH NORECOVERY , REPLACE\n "
-                            + "RESTORE DATABASE " + Program.Db + " FROM DISK='" + strFullPathBackLog + "' WITH STOPAT='" + dt
-                            + "'\n ALTER DATABASE " + Program.Db + " SET MULTI_USER";
+                    string strFullPathBackLog = devicePhysicalName.Replace(".BAK", ".TRN");
+                    query += "BACKUP LOG " + Program.Db + " TO DISK='" + strFullPathBackLog + "' WITH INIT\n "
+                        + "RESTORE DATABASE " + Program.Db + " FROM DISK='" + devicePhysicalName + "' WITH NORECOVERY , REPLACE\n "
+                        + "RESTORE DATABASE " + Program.Db + " FROM DISK='" + strFullPathBackLog + "' WITH STOPAT='" + dt
+                        + "'\n ALTER DATABASE " + Program.Db + " SET MULTI_USER";
 
-                        MessageBox.Show(" " + query, "", MessageBoxButtons.OK);
+                    MessageBox.Show(" " + query, "", MessageBoxButtons.OK);
 
-                        Cursor.Current = Cursors.WaitCursor;
+                    Cursor.Current = Cursors.WaitCursor;
 
-                        if (Program.ExecSqlNonQuery(query)==0)
-                        {
-                            Cursor.Current = Cursors.Default;
-                            MessageBox.Show(" Phục hồi thời gian lúc " + dt + " Thành công!", "", MessageBoxButtons.OK);
-                        }
-                        else
-                        {
-                            Cursor.Current = Cursors.Default;
-                            MessageBox.Show(" Sai đường dẫn backup . Kiểm tra lại  ", "", MessageBoxButtons.OK);
-                        }
-                    //}
-
-                    //else
-                    //{
-                    //    return;
-                    //}
-                    
+                    if (Program.ExecSqlNonQuery(query)==0)
+                    {
+                        Cursor.Current = Cursors.Default;
+                        MessageBox.Show(" Phục hồi thời gian lúc " + dt + " Thành công!", "", MessageBoxButtons.OK);
+                    }
+                    else
+                    {
+                        Cursor.Current = Cursors.Default;
+                        MessageBox.Show(" Sai đường dẫn backup . Kiểm tra lại  ", "", MessageBoxButtons.OK);
+                    }
                 }
             }
         }
 
-        private void RestoreDiaglog(String dtStopAt)
+        private bool IsDevicePathExists(string devicePath)
         {
-            //DialogResult rsdiaglog = MessageBox.Show("Thời gian phục hồi: " + dtStopAt, Program.Db + " - Restore dialog", MessageBoxButtons.OKCancel);
-            //if (rsdiaglog == DialogResult.OK)
-            //{
-            //    String strFullPathBackLog = Program.strDefaultPath + Program.Db + ".TRN";
-            //    strRestore += "BACKUP LOG " + Program.Db + " TO DISK='" + strFullPathBackLog + "' WITH INIT\n "
-            //       + "RESTORE DATABASE " + Program.Db + " FROM DISK='" + strFullPathDevice + "' WITH NORECOVERY , REPLACE\n "
-            //        + "RESTORE DATABASE " + Program.Db + " FROM DISK='" + strFullPathBackLog + "' WITH STOPAT='" + dtStopAt
-            //        + "'\n ALTER DATABASE " + Program.Db + " SET MULTI_USER";
-            //    int checkErr = Program.ExecSqlNonQuery(strRestore, Program.connstr, "lỗi phục hồi cơ sở dữ liệu");
-            //    if (checkErr == 0)
-            //    {
-            //        int i;
-            //        this.PrgLoad.Visible = true;
-            //        this.PrgLoad.Minimum = 0;
-            //        this.PrgLoad.Maximum = 100;
-            //        this.PrgLoad.Step = 20;
-            //        for (i = this.PrgLoad.Minimum; i <= this.PrgLoad.Maximum; i++)
-            //        {
-            //            this.PrgLoad.Value = i;
-            //            PrgLoad.PerformStep();
-            //            Thread.Sleep(10);
-
-            //        }
-            //        PrgLoad.Visible = false;
-            //        MessageBox.Show(" Phục hồi thời gian lúc " + dtStopAt + " Thành công!", "", MessageBoxButtons.OK);
-
-            //    }
-            //    else
-            //    {
-            //        MessageBox.Show(" Phục hồi thất bại ", "", MessageBoxButtons.OK);
-            //    }
-            //}
-
-            //else
-            //{
-            //    return;
-            //}
+            if (File.Exists(devicePath))
+            {
+                return true;
+            }
+            return false;
         }
 
+        private bool DeleteBackUp()
+        {
+            string query = "use master " +
+                "EXEC DeleteBackup " + backup_set_id;
+            Cursor.Current = Cursors.WaitCursor;
+
+            if (Program.ExecSqlNonQuery(query) == 0)
+            {
+                Cursor.Current = Cursors.Default;
+                MessageBox.Show("Xóa bản backup thành công!", "", MessageBoxButtons.OK);
+            }
+            else
+            {
+                Cursor.Current = Cursors.Default;
+                MessageBox.Show("Xóa thất bại!", "", MessageBoxButtons.OK);
+            }
+            Program.conn.Close();
+            LoadDeviceAndBackups();
+            return false;
+        }
 
         #endregion
 
@@ -410,6 +430,7 @@ namespace Backup
                 try
                 {
                     backupPosition = int.Parse(drv[0].ToString());
+                    backup_set_id = int.Parse(drv[4].ToString());
                     selectedBackupTime = (DateTime)(drv[2]);
                 }
                 catch (Exception ex)
@@ -420,8 +441,16 @@ namespace Backup
             }
         }
 
+        private void btnDelete_Click(object sender, EventArgs e)
+        {
+            if (gvBackups.DataRowCount == 1)
+            {
+                MessageBox.Show("Không thể xóa tất cả bản backup.\nSử dụng tính năng xóa tất cả để thực hiện xóa bản backup cuối.", "");
+                return;
+            }
+            DeleteBackUp();
+        }
+
         #endregion
-
-
     }
 }

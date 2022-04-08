@@ -33,6 +33,7 @@ namespace Backup
             this.gvDbName = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.DataBaseName = new DevExpress.XtraGrid.Columns.GridColumn();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.btnDelete = new System.Windows.Forms.Button();
             this.btnReload = new System.Windows.Forms.Button();
             this.btnCreateDevice = new System.Windows.Forms.Button();
             this.btnRestore = new System.Windows.Forms.Button();
@@ -108,6 +109,7 @@ namespace Backup
             // panel1
             // 
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.panel1.Controls.Add(this.btnDelete);
             this.panel1.Controls.Add(this.btnReload);
             this.panel1.Controls.Add(this.btnCreateDevice);
             this.panel1.Controls.Add(this.btnRestore);
@@ -121,8 +123,20 @@ namespace Backup
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(281, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(798, 106);
+            this.panel1.Size = new System.Drawing.Size(903, 106);
             this.panel1.TabIndex = 2;
+            // 
+            // btnDelete
+            // 
+            this.btnDelete.Enabled = false;
+            this.btnDelete.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnDelete.Location = new System.Drawing.Point(780, 9);
+            this.btnDelete.Name = "btnDelete";
+            this.btnDelete.Size = new System.Drawing.Size(101, 60);
+            this.btnDelete.TabIndex = 13;
+            this.btnDelete.Text = "Delete";
+            this.btnDelete.UseVisualStyleBackColor = true;
+            this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
             // 
             // btnReload
             // 
@@ -140,7 +154,7 @@ namespace Backup
             this.btnCreateDevice.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCreateDevice.Location = new System.Drawing.Point(420, 75);
             this.btnCreateDevice.Name = "btnCreateDevice";
-            this.btnCreateDevice.Size = new System.Drawing.Size(355, 27);
+            this.btnCreateDevice.Size = new System.Drawing.Size(461, 27);
             this.btnCreateDevice.TabIndex = 10;
             this.btnCreateDevice.Text = "Create new device";
             this.btnCreateDevice.UseVisualStyleBackColor = true;
@@ -150,7 +164,7 @@ namespace Backup
             // 
             this.btnRestore.Enabled = false;
             this.btnRestore.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnRestore.Location = new System.Drawing.Point(674, 9);
+            this.btnRestore.Location = new System.Drawing.Point(658, 9);
             this.btnRestore.Name = "btnRestore";
             this.btnRestore.Size = new System.Drawing.Size(101, 60);
             this.btnRestore.TabIndex = 9;
@@ -172,7 +186,7 @@ namespace Backup
             // 
             this.btnBackup.Enabled = false;
             this.btnBackup.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnBackup.Location = new System.Drawing.Point(543, 9);
+            this.btnBackup.Location = new System.Drawing.Point(533, 9);
             this.btnBackup.Name = "btnBackup";
             this.btnBackup.Size = new System.Drawing.Size(100, 60);
             this.btnBackup.TabIndex = 8;
@@ -236,7 +250,7 @@ namespace Backup
             this.cbDeleteAll.Enabled = false;
             this.cbDeleteAll.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbDeleteAll.ForeColor = System.Drawing.Color.Red;
-            this.cbDeleteAll.Location = new System.Drawing.Point(47, 43);
+            this.cbDeleteAll.Location = new System.Drawing.Point(135, 46);
             this.cbDeleteAll.Name = "cbDeleteAll";
             this.cbDeleteAll.Size = new System.Drawing.Size(170, 23);
             this.cbDeleteAll.TabIndex = 7;
@@ -249,7 +263,7 @@ namespace Backup
             this.cbTimeParam.Enabled = false;
             this.cbTimeParam.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbTimeParam.ForeColor = System.Drawing.Color.Red;
-            this.cbTimeParam.Location = new System.Drawing.Point(47, 14);
+            this.cbTimeParam.Location = new System.Drawing.Point(135, 17);
             this.cbTimeParam.Name = "cbTimeParam";
             this.cbTimeParam.Size = new System.Drawing.Size(170, 23);
             this.cbTimeParam.TabIndex = 6;
@@ -264,7 +278,7 @@ namespace Backup
             this.gcBackups.Location = new System.Drawing.Point(281, 106);
             this.gcBackups.MainView = this.gvBackups;
             this.gcBackups.Name = "gcBackups";
-            this.gcBackups.Size = new System.Drawing.Size(798, 302);
+            this.gcBackups.Size = new System.Drawing.Size(903, 302);
             this.gcBackups.TabIndex = 3;
             this.gcBackups.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
             this.gvBackups});
@@ -318,7 +332,7 @@ namespace Backup
             this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel2.Location = new System.Drawing.Point(281, 408);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(798, 190);
+            this.panel2.Size = new System.Drawing.Size(903, 190);
             this.panel2.TabIndex = 4;
             // 
             // pnRestoreTime
@@ -327,7 +341,7 @@ namespace Backup
             this.pnRestoreTime.Controls.Add(this.dtpDate);
             this.pnRestoreTime.Controls.Add(this.label4);
             this.pnRestoreTime.Controls.Add(this.dtpHour);
-            this.pnRestoreTime.Location = new System.Drawing.Point(243, 14);
+            this.pnRestoreTime.Location = new System.Drawing.Point(331, 17);
             this.pnRestoreTime.Name = "pnRestoreTime";
             this.pnRestoreTime.Size = new System.Drawing.Size(419, 52);
             this.pnRestoreTime.TabIndex = 11;
@@ -370,7 +384,7 @@ namespace Backup
             this.pnNote.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.pnNote.Controls.Add(this.label5);
             this.pnNote.Controls.Add(this.label6);
-            this.pnNote.Location = new System.Drawing.Point(41, 75);
+            this.pnNote.Location = new System.Drawing.Point(129, 78);
             this.pnNote.Name = "pnNote";
             this.pnNote.Size = new System.Drawing.Size(621, 78);
             this.pnNote.TabIndex = 10;
@@ -403,7 +417,7 @@ namespace Backup
             // 
             this.label8.AutoSize = true;
             this.label8.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label8.Location = new System.Drawing.Point(102, 143);
+            this.label8.Location = new System.Drawing.Point(190, 146);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(9, 38);
             this.label8.TabIndex = 9;
@@ -413,7 +427,7 @@ namespace Backup
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1079, 598);
+            this.ClientSize = new System.Drawing.Size(1184, 598);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.gcBackups);
             this.Controls.Add(this.panel1);
@@ -470,5 +484,6 @@ namespace Backup
         private DevExpress.XtraGrid.Columns.GridColumn Position;
         private DevExpress.XtraGrid.Columns.GridColumn BackupDate;
         private DevExpress.XtraGrid.Columns.GridColumn UserBackup;
+        private System.Windows.Forms.Button btnDelete;
     }
 }
